@@ -14,6 +14,7 @@ script_path = os.path.join(path_root)
 sys.path.append(script_path)
 
 
+from lib import msgs
 from dblib import get_db_cursor_and_connection
 from store import SELF_URL, BASE_PATH
 
@@ -96,4 +97,9 @@ app.include_router(messagesrouter, prefix="/messages")
 @app.get("/", tags=["health"])
 async def home_api():
     return {"message": "Hello World"}
+
+
+@app.get("/trail-messages")
+async def get_stopwords():
+    return msgs
 
