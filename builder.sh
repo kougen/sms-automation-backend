@@ -8,7 +8,7 @@ if [ -z "$target" ]; then
   exit 1
 fi
 
-if [ ! -d scripts/$target ]; then
+if [ ! -d $target ]; then
   echo "The target directory does not exist"
   exit 1
 fi
@@ -21,7 +21,7 @@ mkdir build
 
 cd build
 
-pc_dir=../scripts
+pc_dir=..
 cp -r $pc_dir/$target/*.py ./
 cp -r $pc_dir/$target/Dockerfile ./
 cp -r $pc_dir/requirements.txt ./
