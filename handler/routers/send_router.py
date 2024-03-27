@@ -1,6 +1,6 @@
 from psycopg.errors import InvalidTextRepresentation
 from lib import IdRequest, broadcast_bulk_send, send_message
-from dblib import get_group_by_id, get_recipients_by_group_id, is_server_up, get_db_cursor_and_connection
+from dblib import get_group_by_id, get_recipients_by_group_id, is_server_up, get_db_cursor_and_connection, Logger
 from store import SRV_ADDR
 from fastapi import APIRouter
 
@@ -8,6 +8,7 @@ sendrouter = APIRouter()
 
 cursor, connection = get_db_cursor_and_connection()
 
+logger = Logger("HANDLER:SEND", cursor)
 
 @sendrouter.post("/", tags=["send"])
 async def send_msg_to_recipients(request: IdRequest):
