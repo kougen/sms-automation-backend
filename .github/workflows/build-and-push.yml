@@ -23,9 +23,9 @@ jobs:
       - name: Lowercase the repo name
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
       - name: Prepare and build the container hashed image
-        run: ./scripts/builder.sh handler ghcr.io/${{ env.REPO }}-handler:${{ github.sha }}
+        run: ./builder.sh handler ghcr.io/${{ env.REPO }}-handler:${{ github.sha }}
       - name: Prepare and build the container latest image
-        run: ./scripts/builder.sh handler ghcr.io/${{ env.REPO }}-handler:latest
+        run: ./builder.sh handler ghcr.io/${{ env.REPO }}-handler:latest
 
   build-reciever:
     runs-on: ubuntu-latest
@@ -45,9 +45,9 @@ jobs:
       - name: Lowercase the repo name
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
       - name: Prepare and build the container hashed image
-        run: ./scripts/builder.sh reciever ghcr.io/${{ env.REPO }}-reciever:${{ github.sha }}
+        run: ./builder.sh reciever ghcr.io/${{ env.REPO }}-reciever:${{ github.sha }}
       - name: Prepare and build the container latest image
-        run: ./scripts/builder.sh reciever ghcr.io/${{ env.REPO }}-reciever:latest
+        run: ./builder.sh reciever ghcr.io/${{ env.REPO }}-reciever:latest
 
   build-checker:
     runs-on: ubuntu-latest
@@ -67,9 +67,10 @@ jobs:
       - name: Lowercase the repo name
         run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
       - name: Prepare and build the container hashed image
-        run: ./scripts/builder.sh checker ghcr.io/${{ env.REPO }}-checker:${{ github.sha }}
+        run: ./builder.sh checker ghcr.io/${{ env.REPO }}-checker:${{ github.sha }}
       - name: Prepare and build the container latest image
-        run: ./scripts/builder.sh checker ghcr.io/${{ env.REPO }}-checker:latest
+        run: ./builder.sh checker ghcr.io/${{ env.REPO }}-checker:latest
+
   deploy-stack:
     runs-on: ubuntu-latest
     needs: [build-website, build-handler, build-checker, build-reciever]

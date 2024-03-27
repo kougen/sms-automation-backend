@@ -1,6 +1,6 @@
 FROM python:3.10
 
-LABEL org.opencontainers.image.source "https://github.com/kougen/csikos-sms-automation"
+LABEL org.opencontainers.image.source=https://github.com/kougen/sms-automation-backend
 
 WORKDIR /app
 
