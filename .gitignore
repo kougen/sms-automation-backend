@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+.env
+
+/**/venv/
