@@ -23,6 +23,10 @@ cd build
 
 pc_dir=..
 cp -r $pc_dir/$target/*.py ./
+if [[ -d $pc_dir/$target/routers ]]; then
+  mkdir -p routers
+  cp -r $pc_dir/$target/routers/*.py ./routers/
+fi
 cp -r $pc_dir/$target/Dockerfile ./
 cp -r $pc_dir/requirements.txt ./
 cp -r $pc_dir/dblib/dblib.py ./
