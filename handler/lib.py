@@ -25,6 +25,8 @@ msgs = {
     'rs': os.getenv('RS_MSG')
 }
 
+BASE_PATH = os.getenv('BASE_PATH') or ''
+
 def append_cancel_message(message: str, lang_codes: list[str] = ['en', 'hu', 'rs']):
     for lang_code in lang_codes:
         message += f' {msgs[lang_code]}'

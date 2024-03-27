@@ -3,7 +3,7 @@ from psycopg.errors import InvalidTextRepresentation
 import datetime
 from fastapi import FastAPI
 import threading
-from lib import msgs, LogRequest, LogsRequest, PhoneRequest, PutPendingMessageRequest
+from lib import msgs, LogRequest, LogsRequest, PhoneRequest, PutPendingMessageRequest, BASE_PATH
 from dblib import get_group_by_id, is_server_up, get_db_cursor_and_connection, insert_log, insert_logs, PgLog
 from store import SRV_ADDR, HANDLER_VERSION, CHECKER_VERSION, WEBSITE_VERSION, RECIEVER_VERSION, SELF_URL
 from test_router import testrouter
@@ -58,7 +58,7 @@ You will be able to:
 * **Create users** (_not implemented_).
 * **Read users** (_not implemented_).
 """
-
+print(f"Starting FastAPI on port 8000 ({SELF_URL}), with base path: {BASE_PATH}")
 app = FastAPI(
     title="SMS Automation API",
     description=description,
@@ -76,6 +76,7 @@ app = FastAPI(
         "url": "https://en.wikipedia.org/wiki/Proprietary_software",
     },
     openapi_tags=tags_metadata,
+    root_path=BASE_PATH
 )
 
 app.include_router(testrouter, prefix="/test")
