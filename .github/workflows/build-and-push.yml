@@ -54,4 +54,4 @@ jobs:
     needs: [build-handler, build-checker, build-reciever]
     steps:
       - name: Invoke deployment hook
-        run: curl -X POST ${{ secrets.WEBHOOK_URL }}
+        run: curl -X POST ${{ vars.WEBHOOK_URL }}
