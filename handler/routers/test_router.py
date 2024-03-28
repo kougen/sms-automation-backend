@@ -1,9 +1,9 @@
 import random
 from typing import Annotated
 from fastapi import Query
-from lib import create_test_groups, PgRecipient, perform_test_message, test_broadcast_bulk_send, send_bulk_data
-from dblib import is_server_up, get_db_cursor_and_connection
-from store import test_groups, SRV_ADDR
+from lib import append_cancel_message, create_test_groups, PgRecipient, perform_test_message, update_message, send_message
+from dblib import get_db_cursor_and_connection
+from store import test_groups, SELF_URL
 
 
 from fastapi import APIRouter
@@ -13,66 +13,45 @@ testrouter = APIRouter()
 cursor, connection = get_db_cursor_and_connection()
 
 
-@testrouter.get("/sendto/{phone_numbers}", tags=["test"])
-async def send_test_message_to_numbers(phone_numbers: str, at_the_same_time: bool = False):
-    phone_list = phone_numbers.split(",")
-    recepients: list[PgRecipient] = [PgRecipient(f"Test Joe {i}", phone_list[i], f"{i}_joe@test.com", i) for i in range(len(phone_list))]
-    return perform_test_message(cursor, SRV_ADDR, recepients, "Test message from API", at_the_same_time)
-
-
-@testrouter.get("/send/{msg_count}", tags=["test"])
-async def send_test_message_count(msg_count: int):
-    return test_broadcast_bulk_send(cursor, SRV_ADDR, msg_count)
-
+@testrouter.post("/addmessage", tags=["test"])
+async def add_message_to_pending_queue():
+    group_id = random.randint(0, 1000)
+    access_url = f"{SELF_URL}/nonexistent/{group_id}"
+    return send_message(cursor, group_id, access_url, "pending")
 
 @testrouter.get("/send", tags=["test"])
 async def send_test_message_count_on_given_numbers(phone_numbers: Annotated[list[str], Query()] = [], msg_count: int = 0):
     rand_id = random.randint(0, 1000)
     group = create_test_groups(msg_count, rand_id, phone_numbers)
     test_groups[rand_id] = group
+    access_url = f"{SELF_URL}/test/realgroup"
+    result = perform_test_message(cursor, rand_id, access_url)
+    if result:
+        print("Registered pending message")
 
     return group.get_json_string()
 
-
-@testrouter.post("/send", tags=["test"])
-def execute_message_send_on_give_group(group_id: int):
-    if group_id not in test_groups.keys():
-        return {"message": "Invalid ID", "groups": test_groups}
-
-    if not is_server_up(SRV_ADDR):
-        return {"message": "SMS Server is down"}
-
-    data = {
-        "url": f"/test/realgroup?id={group_id}",
-    }
-
-    return send_bulk_data(cursor, SRV_ADDR, data)
-
-
-@testrouter.get("/groups/{recipient_count}", tags=["test"])
+@testrouter.get("/send/{recipient_count}", tags=["test"])
 async def send_test_message_to_group(recipient_count: int):
     print(f"Sending test message to group with {recipient_count} recipients")
     rand_id = random.randint(0, 1000)
-    trailed_message = testrouterend_cancel_message("Test message from API", ["hu", "rs"])
-    group = {
-        "id": rand_id,
-        "name": "Test Group",
-        "message": "Test message from API",
-        "trailed_message": trailed_message,
-        "enabled": True,
-        "lang_codes": ["hu", "rs"]
-    }
-    recepients: list[PgRecipient] = [PgRecipient(f"Test Joe {i}", f"+test_num_{i}", f"email{i}.test.com", rand_id) for i in range(recipient_count)]
-    group["recipients"] = recepients
-    return group
+    group = create_test_groups(recipient_count, rand_id)
+    test_groups[rand_id] = group
+    access_url = f"{SELF_URL}/test/realgroup"
+    result = perform_test_message(cursor, rand_id, access_url)
+    if result:
+        print("Registered pending message")
+    return group.get_json_string()
 
 
 @testrouter.get("/realgroup", tags=["test"])
-async def send_test_message_to_group_real(id: int):
-    if id not in test_groups.keys():
-        return {"message": "Invalid ID", "groups": test_groups}
-    copied_group = test_groups[id]
-    test_groups.pop(id)
+async def send_test_message_to_group_real(group_id: int, message_id: int):
+    if group_id not in test_groups.keys():
+        cursor.execute('DELETE FROM "PendingMessages" WHERE "groupId" = (%s)', (group_id,))
+        return {"message": "Invalid ID, group not found. Deleted from pending messages."}
+    copied_group = test_groups[group_id]
+    test_groups.pop(group_id)
+    update_message(cursor, message_id, "fetched")
     return copied_group.get_json_string()
 
 
