@@ -12,6 +12,7 @@ from routers.messages_router import messagesrouter
 path_root = Path(__file__).parents[1]
 script_path = os.path.join(path_root)
 sys.path.append(script_path)
+sys.path.append(os.path.join(script_path, "routers"))
 
 
 from lib import msgs
