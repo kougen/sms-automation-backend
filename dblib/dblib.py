@@ -60,8 +60,10 @@ class Logger:
 def get_group_by_id(cursor, id: int) -> Union[PgGroup, None]:
     try:
         cursor.execute('SELECT * FROM "Group" WHERE id = (%s)', (id,))
-        result = cursor.fetchall()
-        group = PgGroup(result[0][0], result[0][1], result[0][2], result[0][3], result[0][4], result[0][5], result[0][6], result[0][7])
+        result = cursor.fetchall() or []
+        if len(result) == 0:
+            return None
+        group = PgGroup(result[0][0], result[0][1], result[0][2], result[0][3], result[0][4], result[0][5], result[0][6], result[0][7] or [])
         return group
     except InvalidTextRepresentation as e:
         print(e)
@@ -127,7 +129,7 @@ def get_recipients_by_group_id(cursor, group_id) -> list[PgRecipient]:
     recepients = []
     try:
         cursor.execute('select * from "Recipient" r where r."groupId" = (%s)', (group_id,))
-        result = cursor.fetchall()
+        result = cursor.fetchall() or []
         for row in result:
             recepient = PgRecipient(row[0], row[2], row[1], group_id)
             recepients.append(recepient)
