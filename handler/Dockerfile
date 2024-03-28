@@ -8,7 +8,6 @@ COPY requirements.txt .
 COPY dblib.py .
 COPY lib.py .
 COPY store.py .
-COPY routers/ .
 COPY main.py .
 
 RUN pip install --no-cache-dir -r requirements.txt
