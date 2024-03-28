@@ -1,3 +1,4 @@
+from psycopg import Cursor
 from pydantic import BaseModel
 import json
 import datetime
@@ -16,7 +17,7 @@ if ENVIRONMENT == "development":
     script_path = os.path.join(path_root)
     sys.path.append(script_path)
 
-from dblib import PgRecipient, get_group_by_id, insert_log, get_client, is_server_up
+from dblib import PgRecipient, insert_log
 
 
 msgs = {
@@ -26,6 +27,47 @@ msgs = {
 }
 
 BASE_PATH = os.getenv('BASE_PATH') or ''
+
+def update_message(cursor: Cursor, id: int, status: str):
+    try:
+        connection = cursor.connection
+        if status not in ["pending", "sent", "failed", "sending", "fetched"]:
+            return {"message": "Invalid Status", "success": False}
+
+        try:
+            cursor.execute('UPDATE "PendingMessages" SET "status" = (%s) WHERE "id" = (%s)', (status, id))
+            connection.commit()
+            return {"message": "Status Updated", "success": True}
+        except Exception as e:
+            print(e)
+            connection.rollback()
+            return {"message": "Error Occurred: " + str(e), "success": False}
+    except Exception as e:
+        print(e)
+        return {"message": "Error Occurred: " + str(e), "success": False}
+
+
+def send_message(cursor: Cursor, group_id: int, access_url: str, status: str):
+    try:
+        connection = cursor.connection
+        try:
+            cursor.execute('INSERT INTO "PendingMessages" ("groupId", "status", "accessUrl") VALUES (%s, %s, %s) RETURNING "id"', (group_id, status, access_url))
+            result = cursor.fetchone()
+            connection.commit()
+            if not result:
+                return {"message": "Row was not inserted", "success": False}
+            id = result[0]
+            return {"message": f"Message added to {status} queue", "success": True, "group_id": group_id, "message_id": id}
+        except Exception as e:
+            print(e)
+            insert_log(cursor, "ERROR", f"Uknown error wihile sending message. Error: {e}", "HANDLER")
+            connection.rollback()
+            return {"message": "Error Occurred: " + str(e), "success": False}
+    except Exception as e:
+        print(e)
+        insert_log(cursor, "ERROR", f"Error while sending message. Error: {e}", "HANDLER")
+        return {"message": "Error Occurred: " + str(e), "success": False}
+
 
 def append_cancel_message(message: str, lang_codes: list[str] = ['en', 'hu', 'rs']):
     for lang_code in lang_codes:
@@ -73,8 +115,15 @@ class LogsRequest(BaseModel):
     logs: list[LogRequest]
 
 
-class PutPendingMessageRequest(BaseModel):
+class UpdateMessageRequest(BaseModel):
+    id: int
     status: str
+
+
+class MessageRequest(BaseModel):
+    group_id: int
+    access_url: str
+    status: str = "pending"
 
 
 def validate_json(json_str):
@@ -84,7 +133,6 @@ def validate_json(json_str):
         print(e)
         return False
     return True
-
 
 def get_json_from_recipients(cursor, recipients: list[PgRecipient], message: str, lang_codes: list[str]):
     packet = {
@@ -99,83 +147,14 @@ def get_json_from_recipients(cursor, recipients: list[PgRecipient], message: str
     return data
     
 
-def send_message(cursor, srvr_addr, recipients: list[PgRecipient], message: str, lang_codes: list[str]):
-    try:
-        for recepient in recipients:
-            client = get_client(srvr_addr)
-            print(f'\t{recepient.name} - {recepient.phone_number}')
-            try:
-                packet = {
-                        "id": str(uuid4()),
-                        "phone": recepient.phone_number,
-                        "message": append_cancel_message(message, lang_codes)
-                    }
-                data = json.dumps(packet).encode('utf-8')
-                print(f'Sending: {data}')
-                client.sendall(data)
-                response = client.recv(2048)
-                print(f'Response: {response}')
-                insert_log(cursor, "INFO", f"Messege sent to {recepient.phone_number} ({recepient.group_id}) with response: {response}", "HANDLER")
-            except Exception as e:
-                print(e)
-                insert_log(cursor, "ERROR", f"Error sending message to {recepient.phone_number} ({recepient.group_id}). {e}", "HANDLER")
-                return None
-            client.close()
-        return True
-    except Exception as e:
-        print(e)
-        insert_log(cursor, "ERROR", f"Uknown error wihile sending message. Error: {e}", "HANDLER")
-        return False
 
-
-def perform_test_message(cursor, server, recepients: list[PgRecipient], message: str, at_the_same_time):
-    print(f"Sending {len(recepients)} messages at the same time: {at_the_same_time}")
+def perform_test_message(cursor: Cursor, group_id: int, access_url: str):
     try:
-        if not is_server_up(server):
-            return {"message": "SMS Server is down"}
-        else:
-            result = send_message(cursor, server, recepients, "Test message from API", ["hu", "rs"])
-            resolution = { "isSent": ""}
-            if result is None:
-                resolution["isSent"] = "Partially Sent"
-            elif result:
-                resolution["isSent"] = "Sent"
-            else:
-                resolution["isSent"] = "Failed"
-        return {"message": "Message Sent", "resolution": resolution}
+        return send_message(cursor, group_id, access_url, "pending")
     except Exception as e:
         print(e)
         return {"message": "Error Occurred: " + str(e)}
 
-
-def send_bulk_data(cursor, server, data: dict):
-    try:
-        json_data = json.dumps(data).encode('utf-8')
-        client = get_client(server)
-        client.sendall(json_data)
-        response = client.recv(2048)
-        print(f'Response: {response}')
-        client.close()
-        return {"message": "Bulk message broadcasted", "data": data, "response": response}
-    except Exception as e:
-        print(e)
-        insert_log(cursor, "ERROR", f"Uknown error wihile sending message. Error: {e}", "HANDLER")
-        return {"message": "Error Occurred: " + str(e)}
-
-
-def broadcast_bulk_send(cursor, server, group_id: int):
-    group = get_group_by_id(cursor, group_id)
-    if not group:
-        return {"message": "Invalid ID, group not found"}
-    if not group.enabled:
-        return {"message": "Group is not enabled"}
-    if not is_server_up(server):
-        return {"message": "SMS Server is down"}
-    else:
-        data = {
-            "url": f"/groups/{group.id}",
-        }
-        return send_bulk_data(cursor, server, data)
 
 def create_test_groups(recepient_count: int, groups_id: int, phone_numbers: list[str] = []) -> TestGroup:
     print(f"Creating test groups with {recepient_count} recipients")
@@ -195,12 +174,3 @@ def create_test_groups(recepient_count: int, groups_id: int, phone_numbers: list
             recipients.append(PgRecipient(f"Test Joe {i}", random_phone, f"email{i}.test.com", groups_id))
     group.recipients = recipients
     return group
-
-
-def test_broadcast_bulk_send(cursor, server, count: int):
-    if not is_server_up(server):
-        return {"message": "SMS Server is down"}
-    data = {
-        "url": f"/test/groups/{count}",
-    }
-    return send_bulk_data(cursor, server, data)
