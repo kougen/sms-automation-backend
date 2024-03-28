@@ -36,8 +36,9 @@ class IdRequest(BaseModel):
     id: int
 
 
-class PhoneRequest(BaseModel):
+class CancelRequest(BaseModel):
     phone_number: str
+    message: str
 
 class LogRequest(BaseModel):
     level: str

@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter
 from psycopg.errors import InvalidTextRepresentation
-from lib import append_cancel_message, PhoneRequest
+from lib import append_cancel_message, CancelRequest
 from dblib import get_db_cursor_and_connection, get_group_by_id, get_recipients_by_group_id, Logger
 
 groupsrouter = APIRouter()
@@ -23,8 +23,8 @@ async def get_group_details(id: int):
         group = get_group_by_id(cursor, id)
         if not group:
             return {"message": "Invalid ID"}
-        recipients = get_recipients_by_group_id(cursor, id)
         trailed_message = append_cancel_message(group.message, group.lang_codes)
+        recipients = get_recipients_by_group_id(cursor, id)
         return {
             "id": group.id,
             "name": group.name,
@@ -38,29 +38,42 @@ async def get_group_details(id: int):
         print(e)
         return {"message": "Invalid ID"}
     except Exception as e:
-        print(e)
-        return {"message": "Error Occurred: " + str(e)}
+        print(f"Error in get_group_details: {e}")
+        return {"message": "Error Occurred: " + str(e), "path": "get_group_details"}
 
 
 @groupsrouter.delete("/cancel", tags=["groups"])
-def delete_recipient_from_group(phone: str):
-    if not phone:
-        return {"message": "Invalid Phone Number", "success": False}
+def delete_recipient_from_group(request: CancelRequest):
+    keys = request.dict().keys()
+    if not request or not 'phone_number' in keys or not 'message' in keys:
+        return {"message": "ERROR", "success": False}
+
+    phone = request.phone_number
+    message = request.message
+
+    if not phone or not message:
+        return {"message": "ERROR", "success": False}
+
+
+    if not ("STOP" in message.upper() or "Stap" in message.upper() or "Stopp" in message.upper()):
+        print(f"Received: {phone}, but no STOP message (or similar) found: {message}")
+        logger.info(f"Received: {phone}, but no STOP message (or similar) found: {message}")
+        return { "message": "NO_ACTION_REQUIRED", "success": True}
 
     try:
         existing_recipient = cursor.execute('SELECT * FROM "Recipient" WHERE "phone" = (%s)', (phone,))
         if not existing_recipient:
             logger.info(f"Recipient with phone number {phone} not found")
-            return {"message": "Recipient not found", "success": False}
+            return {"message": "NO_ACTION_REQUIRED", "success": True}
         else:
             cursor.execute('DELETE FROM "Recipient" WHERE "phone" = (%s)', (phone,))
             connection.commit()
             logger.info(f"Recipient with phone number {phone} deleted")
-            return {"message": "Recipient Deleted", "success": True}
+            return {"message": "OK", "success": True}
     except InvalidTextRepresentation as e:
         print(e)
         logger.error(f"Invalid phone number: {phone}")
-        return {"message": "Invalid ID", "success": False}
+        return {"message": "ERROR", "success": False}
     except Exception as e:
         print(e)
         logger.error(f"Error deleting recipient: {phone}")
