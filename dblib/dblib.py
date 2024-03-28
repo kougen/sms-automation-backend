@@ -159,27 +159,6 @@ def wait_for_healthy_website(base_url: str, test_path: str = '/api/health', star
             print("Waiting for server to start!")
             time.sleep(5)
 
-
-def get_client(addr: tuple[str, int]):
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(addr)
-    return client
-
-
-def is_server_up(addr: tuple[str, int] = ('localhost', 5000)):
-    try:
-        client = get_client(addr)
-        client.sendall(b'PING')
-        response = client.recv(1024)
-        print(f"Server Response: {response}")
-        client.close()
-        return True
-    except Exception as e:
-        print("Server is down")
-        print(e)
-        return False
-
-
 def get_db_cursor_and_connection() -> tuple[Cursor, Connection]:
     HOST = os.getenv("DB_HOST")
     USER = os.getenv("DB_USER")

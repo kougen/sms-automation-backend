@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from dblib import is_server_up, get_db_cursor_and_connection
+from dblib import get_db_cursor_and_connection
 from fastapi.responses import JSONResponse
 import datetime
 from store import SRV_ADDR, HANDLER_VERSION, CHECKER_VERSION, WEBSITE_VERSION, RECIEVER_VERSION
@@ -20,9 +20,7 @@ async def ping():
 
 @health_router.get("/ping/{host}", tags=["health"])
 async def ping_db(host: str):
-    if host == "phone":
-        result = is_server_up(SRV_ADDR)
-        return { "host": SRV_ADDR, "status": "up" if result else "down"}
+    return {"host": host, "status": "up"}
 
 
 @health_router.get("/version", tags=["health"])
