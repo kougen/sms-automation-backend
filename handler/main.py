@@ -1,14 +1,14 @@
 from fastapi import  FastAPI
-from .test_router import testrouter
-from .send_router import sendrouter
-from .groups_router import groupsrouter
-from .health_router import health_router
-from .log_router import log_router
-from .messages_router import messagesrouter
-
 from lib import msgs
 from dblib import get_db_cursor_and_connection
 from store import SELF_URL, BASE_PATH
+
+from test_router import testrouter
+from send_router import sendrouter
+from groups_router import groupsrouter
+from health_router import health_router
+from log_router import log_router
+from messages_router import messagesrouter
 
 result = get_db_cursor_and_connection()
 
