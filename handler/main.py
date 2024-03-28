@@ -1,19 +1,10 @@
 from fastapi import  FastAPI
-from pathlib import Path
-import os
-import sys
-from routers.test_router import testrouter
-from routers.send_router import sendrouter
-from routers.groups_router import groupsrouter
-from routers.health_router import health_router
-from routers.log_router import log_router
-from routers.messages_router import messagesrouter
-
-path_root = Path(__file__).parents[1]
-script_path = os.path.join(path_root)
-sys.path.append(script_path)
-sys.path.append(os.path.join(script_path, "routers"))
-
+from test_router import testrouter
+from send_router import sendrouter
+from groups_router import groupsrouter
+from health_router import health_router
+from log_router import log_router
+from messages_router import messagesrouter
 
 from lib import msgs
 from dblib import get_db_cursor_and_connection
