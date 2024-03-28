@@ -46,7 +46,7 @@ def insert_logs_thread(logs: list[PgLog]):
         print(e)
         print(f"Error inserting logs: {e}")
 
-@log_router.post("/logs", tags=["logs"])
+@log_router.post("/", tags=["logs"])
 async def log_multiple_messages(request: LogsRequest):
     logs = request.logs
     print(f"Received {len(logs)} logs")  
@@ -54,7 +54,7 @@ async def log_multiple_messages(request: LogsRequest):
     threading.Thread(target=insert_logs_thread, args=(pgLogs,)).start()
     return {"message": "Thanks for the logs", "success": True}
 
-@log_router.delete("/logs", tags=["logs"])
+@log_router.delete("/", tags=["logs"])
 async def delete_logs(mode: str):
     try:
         if mode == "all":
@@ -72,7 +72,7 @@ async def delete_logs(mode: str):
         return {"message": "Error Occurred: " + str(e), "success": False}
 
 
-@log_router.get("/logs", tags=["logs"])
+@log_router.get("/", tags=["logs"])
 async def get_logs():
     try:
         cursor.execute('SELECT * FROM "Log"')
@@ -83,7 +83,7 @@ async def get_logs():
         return {"message": "Error Occurred: " + str(e), "success": False}
 
 
-@log_router.get("/logs/{level}", tags=["logs"])
+@log_router.get("/{level}", tags=["logs"])
 async def get_logs_by_level(level: str):
     try:
         cursor.execute('SELECT * FROM "Log" WHERE "level" = (%s)', (level,))
@@ -94,7 +94,7 @@ async def get_logs_by_level(level: str):
         return {"message": "Error Occurred: " + str(e), "success": False}
 
 
-@log_router.get("/logs/{level}/{tool}", tags=["logs"])
+@log_router.get("/{level}/{tool}", tags=["logs"])
 async def get_logs_by_level_and_tool(level: str, tool: str):
     try:
         cursor.execute('SELECT * FROM "Log" WHERE "level" = (%s) AND "tool" = (%s)', (level, tool))
