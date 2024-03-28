@@ -30,16 +30,16 @@ class PgGroup:
 
 
 class PgLog:
-    created_at: datetime
-
-    def __init__(self, id, level, message, tool, timezone="UTC", logged_at=None, comment=""):
-        self.id = id
+    def __init__(self, level, message, tool, timezone="UTC", logged_at=None, comment=""):
         self.level = level
         self.message = message
         self.tool = tool
         self.timezone = timezone
         self.logged_at = logged_at
         self.comment = comment
+
+        self.id: str
+        self.created_at: datetime
 
 
 class Logger:

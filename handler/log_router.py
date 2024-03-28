@@ -23,7 +23,7 @@ def log_message(request: LogRequest):
         return {"message": "Error Occurred: " + str(e), "success": False}
 
 def convertRequestToLog(request: LogRequest):
-    return PgLog(request.level, request.message, request.tool, request.comment, request.timezone, request.logged_at)
+    return PgLog(request.level, request.message, request.tool, request.timezone, request.logged_at, request.comment)
 
 def runAsyncLogInsert(c, logs):
     print(f"Inserting {len(logs)} logs")
