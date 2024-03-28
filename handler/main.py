@@ -83,7 +83,7 @@ app.include_router(testrouter, prefix="/test")
 app.include_router(sendrouter, prefix="/send")
 app.include_router(groupsrouter, prefix="/groups")
 app.include_router(health_router, prefix="/health")
-app.include_router(log_router)
+app.include_router(log_router, prefix="/logs")
 app.include_router(messagesrouter, prefix="/messages")
 
 @app.get("/", tags=["health"])
