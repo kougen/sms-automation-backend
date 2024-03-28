@@ -8,7 +8,7 @@ groupsrouter = APIRouter()
 
 cursor, connection = get_db_cursor_and_connection()
 
-logger = Logger("HANDLER:GROUPS", cursor)
+logger = Logger("HANDLER", cursor, "GROUPS_ROUTER")
 
 @groupsrouter.get("/", tags=["groups"])
 async def get_groups():
@@ -42,7 +42,7 @@ async def get_group_details(id: int):
         return {"message": "Error Occurred: " + str(e), "path": "get_group_details"}
 
 
-@groupsrouter.delete("/cancel", tags=["groups"])
+@groupsrouter.post("/cancel", tags=["groups"])
 def delete_recipient_from_group(request: CancelRequest):
     keys = request.dict().keys()
     if not request or not 'phone_number' in keys or not 'message' in keys:

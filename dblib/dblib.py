@@ -43,17 +43,21 @@ class PgLog:
 
 
 class Logger:
-    def __init__(self, tool: str, cursor: Cursor):
+    def __init__(self, tool: str, cursor: Cursor, comment: str = ""):
         self.tool = tool
         self.cursor = cursor
+        self.comment = comment
 
     def info(self, message: str, comment: str = ""):
+        comment = comment or self.comment
         insert_log(self.cursor, "INFO", message, self.tool, comment)
     
     def error(self, message: str, comment: str = ""):
+        comment = comment or self.comment
         insert_log(self.cursor, "ERROR", message, self.tool, comment)
 
     def warning(self, message: str, comment: str = ""):
+        comment = comment or self.comment
         insert_log(self.cursor, "WARNING", message, self.tool, comment)
 
 
