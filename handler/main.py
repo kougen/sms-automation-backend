@@ -1,4 +1,4 @@
-from fastapi import  FastAPI
+from fastapi import FastAPI
 from lib import msgs
 from dblib import get_db_cursor_and_connection
 from store import SELF_URL, BASE_PATH
@@ -67,7 +67,7 @@ app = FastAPI(
     terms_of_service=f"{SELF_URL}/terms/",
     contact={
         "name": "Joshua Hegedus",
-        "url": "https://kou-gen.net/support",
+        "url": "https://kou-gen.net/sms-automation/support",
         "email": "josh.hegedus@outlook.com",
     },
     # Closed source license
@@ -85,6 +85,7 @@ app.include_router(groupsrouter, prefix="/groups")
 app.include_router(health_router, prefix="/health")
 app.include_router(log_router, prefix="/logs")
 app.include_router(messagesrouter, prefix="/messages")
+
 
 @app.get("/", tags=["health"])
 async def home_api():
