@@ -7,6 +7,9 @@ __pycache__/
 .pnp.js
 .yarn/install-state.gz
 
-.env
+handler/.env
 
 /**/venv/
+/**/__pycache__/
+/**/dblib.py
+!/dblib/dblib.py
