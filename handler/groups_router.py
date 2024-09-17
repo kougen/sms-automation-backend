@@ -7,8 +7,15 @@ from dblib import get_db_cursor_and_connection, get_group_by_id, get_recipients_
 groupsrouter = APIRouter()
 
 cursor, connection = get_db_cursor_and_connection()
-
 logger = Logger("HANDLER", cursor, "GROUPS_ROUTER")
+
+stopMessages = ["stop", "stap", "stopp", "pauza"]
+
+def is_stop_message(message: str):
+    for stopMessage in stopMessages:
+        if stopMessage in message.lower():
+            return True
+    return False
 
 @groupsrouter.get("/", tags=["groups"])
 async def get_groups():
@@ -43,7 +50,7 @@ async def get_group_details(id: int):
 
 
 @groupsrouter.post("/cancel", tags=["groups"])
-def delete_recipient_from_group(request: CancelRequest):
+def cancel_recipient(request: CancelRequest):
     keys = request.dict().keys()
     if not request or not 'phone_number' in keys or not 'message' in keys:
         return {"message": "ERROR", "success": False}
@@ -55,7 +62,7 @@ def delete_recipient_from_group(request: CancelRequest):
         return {"message": "ERROR", "success": False}
 
 
-    if not ("STOP" in message.upper() or "Stap" in message.upper() or "Stopp" in message.upper()):
+    if not is_stop_message(message):
         print(f"Received: {phone}, but no STOP message (or similar) found: {message}")
         logger.info(f"Received: {phone}, but no STOP message (or similar) found: {message}")
         return { "message": "NO_ACTION_REQUIRED", "success": True}
@@ -66,9 +73,9 @@ def delete_recipient_from_group(request: CancelRequest):
             logger.info(f"Recipient with phone number {phone} not found")
             return {"message": "NO_ACTION_REQUIRED", "success": True}
         else:
-            cursor.execute('DELETE FROM "Recipient" WHERE "phone" = (%s)', (phone,))
+            cursor.execute('UPDATE "Recipient" SET "isSubscribed" = FALSE WHERE "phone" = (%s)', (phone,))
             connection.commit()
-            logger.info(f"Recipient with phone number {phone} deleted")
+            logger.info(f"Recipient with phone number {phone} cancelled")
             return {"message": "OK", "success": True}
     except InvalidTextRepresentation as e:
         print(e)
@@ -76,5 +83,5 @@ def delete_recipient_from_group(request: CancelRequest):
         return {"message": "ERROR", "success": False}
     except Exception as e:
         print(e)
-        logger.error(f"Error deleting recipient: {phone}")
+        logger.error(f"Error cancelling recipient: {phone}")
         return {"message": "Error Occurred: " + str(e), "success": False}
