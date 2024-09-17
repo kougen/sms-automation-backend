@@ -46,8 +46,9 @@ def handler_data(data, conn: socket.socket, cursor: Cursor, connection: Connecti
         count = cursor.fetchone()
         if count is not None:
             count = count[0]
-        print(f"Deleting {count} records with phone {phone}")
-        cursor.execute('DELETE FROM "Recipient" WHERE "phone" = (%s)', (phone,))
+        print(f"Unsubscribing {count} records with phone {phone}")
+        # Setting the 'isSubscribed' to False for all records with the given phone number
+        cursor.execute('UPDATE "Recipient" SET "isSubscribed" = FALSE WHERE "phone" = (%s)', (phone,))
         connection.commit()
         insert_log(cursor, "INFO", f"Deleted {count} records with phone {phone}", "RECEIVER")
         conn.sendall(b"OK")
