@@ -58,7 +58,7 @@ You will be able to:
 * **Create users** (_not implemented_).
 * **Read users** (_not implemented_).
 """
-print(f"Starting FastAPI on port 8000 ({SELF_URL}), with base path: {BASE_PATH}")
+print(f"Starting FastAPI on ({SELF_URL}), with base path: {BASE_PATH}")
 app = FastAPI(
     title="SMS Automation API",
     description=description,
